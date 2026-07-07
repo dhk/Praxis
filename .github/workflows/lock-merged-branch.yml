@@ -1,0 +1,32 @@
+name: Lock merged branch
+
+# Locks a PR's head branch as soon as the PR merges, making it read-only.
+# Any later push to the merged branch fails server-side instead of landing
+# stray commits on a closed PR.
+#
+# Requires BRANCH_ADMIN_TOKEN: a fine-grained PAT with "Administration: write"
+# on this repo (the default GITHUB_TOKEN cannot modify branch protection).
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  lock:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.BRANCH_ADMIN_TOKEN }}
+          script: |
+            await github.rest.repos.updateBranchProtection({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              branch: context.payload.pull_request.head.ref,
+              required_status_checks: null,
+              enforce_admins: false,
+              required_pull_request_reviews: null,
+              restrictions: null,
+              lock_branch: true,
+            });
