@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<template id="__bundler_thumbnail">
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#f5f6fa"/><circle cx="34" cy="38" r="4" fill="#2b50e8"/><text x="42" y="43" font-family="monospace" font-size="16" font-weight="700" fill="#1a1c24">Px</text><rect x="30" y="56" width="40" height="3" rx="1.5" fill="#2b50e8"/><rect x="30" y="63" width="30" height="2" rx="1" fill="#c8cde0"/></svg>
+</template>
+<x-dc>
+<!-- @template name="Praxis UX Spec" description="RFC-styled UX specification with pass-by-pass wireframes, rendered in the DHK Electric Cobalt language." -->
+<helmet>
+<script src="./ds-base.js"></script>
+<style>
+  body { background: var(--bg); }
+  a { color: var(--accent); }
+  a:hover { color: var(--accent-hover); }
+</style>
+</helmet>
+
+<div style="max-width: 980px; margin: 0 auto; padding: 72px 24px 120px; font-family: var(--font-sans); color: var(--text);">
+
+  <!-- ── HERO ────────────────────────────────────────── -->
+  <div style="font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 20px;">Praxis / spec /</div>
+
+  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 24px;">
+    <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.Tag" kind="essay" hint-size="70px,24px">RFC-0002</x-import>
+    <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.Tag" kind="tool" hint-size="80px,24px">UX SPEC</x-import>
+    <span style="font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; color: var(--text-dim);">Status Draft · v0.1 · Depends on RFC-0001</span>
+  </div>
+
+  <h1 style="font-size: clamp(40px, 5vw, 60px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; max-width: 780px;">A viewer for the artifact trail</h1>
+
+  <p style="font-size: 19px; line-height: 1.6; color: var(--text-muted); max-width: 680px; margin-top: 24px;">A static web UI where a user enters or uploads a document, runs the Praxis pipeline once, and steps through each pass with its artifacts. The UI inspects the completed trail — it adds no transformation logic of its own.</p>
+
+  <div style="display: flex; gap: 32px; flex-wrap: wrap; margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border);">
+    <div><div style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim);">Surface</div><div style="font-size: 15px; color: var(--text-muted); margin-top: 6px;">One page · two zones</div></div>
+    <div><div style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim);">Engine</div><div style="font-size: 15px; color: var(--text-muted); margin-top: 6px;">Python via Pyodide</div></div>
+    <div><div style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim);">Deploy</div><div style="font-size: 15px; color: var(--text-muted); margin-top: 6px;">Static · no backend</div></div>
+    <div><div style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim);">Passes</div><div style="font-size: 15px; color: var(--text-muted); margin-top: 6px;">6 · one panel each</div></div>
+  </div>
+
+  <!-- ── 01 OVERVIEW ─────────────────────────────────── -->
+  <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.SectionDivider" hint-size="100%,80px">01 — Goals &amp; non-goals</x-import>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 48px;">
+    <div>
+      <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 20px;">Goals</h3>
+      <ul style="list-style: none; display: flex; flex-direction: column; gap: 14px;">
+        <li style="display: flex; gap: 12px; font-size: 15px; line-height: 1.6; color: var(--text-muted);"><span style="color: var(--accent); font-family: var(--font-mono);">→</span> Enter a document by paste, upload (<span style="font-family: var(--font-mono); font-size: 13px;">.md</span> / <span style="font-family: var(--font-mono); font-size: 13px;">.txt</span>), or a bundled example.</li>
+        <li style="display: flex; gap: 12px; font-size: 15px; line-height: 1.6; color: var(--text-muted);"><span style="color: var(--accent); font-family: var(--font-mono);">→</span> Step through the six passes, one screen per pass.</li>
+        <li style="display: flex; gap: 12px; font-size: 15px; line-height: 1.6; color: var(--text-muted);"><span style="color: var(--accent); font-family: var(--font-mono);">→</span> Trace the evidence chain: transformation → recommendation → observation.</li>
+        <li style="display: flex; gap: 12px; font-size: 15px; line-height: 1.6; color: var(--text-muted);"><span style="color: var(--accent); font-family: var(--font-mono);">→</span> Download the complete artifact trail — the same six files the CLI writes.</li>
+        <li style="display: flex; gap: 12px; font-size: 15px; line-height: 1.6; color: var(--text-muted);"><span style="color: var(--accent); font-family: var(--font-mono);">→</span> Deploy as a static site on GitHub Pages or Vercel with no backend.</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 20px;">Non-goals <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); font-weight: 400;">(v1)</span></h3>
+      <ul style="list-style: none; display: flex; flex-direction: column; gap: 14px;">
+        <li style="display: flex; gap: 12px; font-size: 15px; line-height: 1.6; color: var(--text-dim);"><span style="font-family: var(--font-mono);">×</span> No accounts, persistence, or server storage — documents never leave the browser.</li>
+        <li style="display: flex; gap: 12px; font-size: 15px; line-height: 1.6; color: var(--text-dim);"><span style="font-family: var(--font-mono);">×</span> No editing of transformation packs (view-only).</li>
+        <li style="display: flex; gap: 12px; font-size: 15px; line-height: 1.6; color: var(--text-dim);"><span style="font-family: var(--font-mono);">×</span> No accept/reject of individual transformations mid-run.</li>
+        <li style="display: flex; gap: 12px; font-size: 15px; line-height: 1.6; color: var(--text-dim);"><span style="font-family: var(--font-mono);">×</span> No LLM calls — the pipeline stays deterministic and auditable.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── 02 THE ONE PAGE ─────────────────────────────── -->
+  <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.SectionDivider" hint-size="100%,80px">02 — The one page</x-import>
+
+  <p style="font-size: 16px; line-height: 1.75; color: var(--text-muted); max-width: 680px; margin-bottom: 12px;">The pipeline executes in milliseconds, so the UI does not animate execution. It runs the whole pipeline <strong style="color: var(--text);">once</strong>, then lets the user walk the completed artifact trail. <strong style="color: var(--text);">Stepping is inspection, not execution</strong> — consistent with "the artifact trail is the product."</p>
+
+  <!-- Layout anatomy -->
+  <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 20px; margin-top: 28px;">
+    <div style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 16px;">Anatomy · one page, two zones</div>
+
+    <!-- persistent stepper zone -->
+    <div style="border: 1px dashed var(--border); border-radius: 4px; padding: 14px; background: var(--bg);">
+      <div style="font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px;">Zone A — persistent pass stepper</div>
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <span style="flex: 1; min-width: 96px; text-align: center; font-family: var(--font-mono); font-size: 12px; padding: 8px 4px; border-radius: 4px; background: var(--accent); color: #fff;">1 Input</span>
+        <span style="color: var(--text-dim);">→</span>
+        <span style="flex: 1; min-width: 96px; text-align: center; font-family: var(--font-mono); font-size: 12px; padding: 8px 4px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border); color: var(--text-muted);">2 Observe</span>
+        <span style="color: var(--text-dim);">→</span>
+        <span style="flex: 1; min-width: 96px; text-align: center; font-family: var(--font-mono); font-size: 12px; padding: 8px 4px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border); color: var(--text-muted);">3 Recommend</span>
+        <span style="color: var(--text-dim);">→</span>
+        <span style="flex: 1; min-width: 96px; text-align: center; font-family: var(--font-mono); font-size: 12px; padding: 8px 4px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border); color: var(--text-muted);">4 Transform</span>
+        <span style="color: var(--text-dim);">→</span>
+        <span style="flex: 1; min-width: 96px; text-align: center; font-family: var(--font-mono); font-size: 12px; padding: 8px 4px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border); color: var(--text-muted);">5 Validate</span>
+        <span style="color: var(--text-dim);">→</span>
+        <span style="flex: 1; min-width: 96px; text-align: center; font-family: var(--font-mono); font-size: 12px; padding: 8px 4px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border); color: var(--text-muted);">6 Report</span>
+      </div>
+    </div>
+
+    <!-- pass panel zone -->
+    <div style="border: 1px dashed var(--border); border-radius: 4px; padding: 14px; background: var(--bg); margin-top: 10px; min-height: 120px;">
+      <div style="font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px;">Zone B — pass panel (content of the active step)</div>
+      <div style="display: flex; gap: 10px;">
+        <div style="flex: 2; height: 90px; border-radius: 3px; background: repeating-linear-gradient(45deg, var(--bg2), var(--bg2) 8px, var(--bg3) 8px, var(--bg3) 16px);"></div>
+        <div style="flex: 1; height: 90px; border-radius: 3px; background: var(--bg2); border: 1px solid var(--border-light);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- run lifecycle -->
+  <h3 style="font-size: 20px; font-weight: 600; margin: 44px 0 20px;">Run lifecycle &amp; stepper states</h3>
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+    <div style="border: 1px solid var(--border); border-radius: 4px; padding: 18px; background: var(--bg2);">
+      <div style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-teal); margin-bottom: 10px;">Before a run</div>
+      <p style="font-size: 14px; line-height: 1.6; color: var(--text-muted);">Only <strong style="color: var(--text);">Input</strong> is enabled. Steps 2–6 are dimmed and non-interactive.</p>
+    </div>
+    <div style="border: 1px solid var(--border); border-radius: 4px; padding: 18px; background: var(--bg2);">
+      <div style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px;">After a run</div>
+      <p style="font-size: 14px; line-height: 1.6; color: var(--text-muted);">All steps enabled, each with a <strong style="color: var(--text);">summary badge</strong>. Free navigation in any order.</p>
+    </div>
+    <div style="border: 1px solid var(--border); border-radius: 4px; padding: 18px; background: var(--bg2);">
+      <div style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-orange); margin-bottom: 10px;">On edit</div>
+      <p style="font-size: 14px; line-height: 1.6; color: var(--text-muted);">Editing the input <strong style="color: var(--text);">invalidates</strong> the run — steps 2–6 grey out until re-run.</p>
+    </div>
+  </div>
+
+  <!-- ── 03 PASS PANELS ──────────────────────────────── -->
+  <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.SectionDivider" hint-size="100%,80px">03 — Pass panels</x-import>
+
+  <!-- Stepper, run-complete state -->
+  <div style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px;">Stepper — run complete, with summary badges</div>
+  <div style="display: flex; align-items: stretch; gap: 6px; flex-wrap: wrap; margin-bottom: 48px;">
+    <div style="flex: 1; min-width: 120px; text-align: center; padding: 10px 6px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border);">
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text);">1 · Input</div>
+      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 4px;">1,284 words</div>
+    </div>
+    <div style="flex: 1; min-width: 120px; text-align: center; padding: 10px 6px; border-radius: 4px; background: var(--accent); border: 1px solid var(--accent);">
+      <div style="font-family: var(--font-mono); font-size: 12px; color: #fff;">2 · Observe</div>
+      <div style="font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.8); margin-top: 4px;">12 observations</div>
+    </div>
+    <div style="flex: 1; min-width: 120px; text-align: center; padding: 10px 6px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border);">
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text);">3 · Recommend</div>
+      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 4px;">12 proposed</div>
+    </div>
+    <div style="flex: 1; min-width: 120px; text-align: center; padding: 10px 6px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border);">
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text);">4 · Transform</div>
+      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 4px;">9 applied / 3 flagged</div>
+    </div>
+    <div style="flex: 1; min-width: 120px; text-align: center; padding: 10px 6px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border);">
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text);">5 · Validate</div>
+      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--accent-teal); margin-top: 4px;">pass</div>
+    </div>
+    <div style="flex: 1; min-width: 120px; text-align: center; padding: 10px 6px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border);">
+      <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text);">6 · Report</div>
+      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 4px;">ready</div>
+    </div>
+  </div>
+
+  <!-- PANEL 1 — INPUT -->
+  <div style="margin-bottom: 56px;">
+    <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px;">
+      <span style="font-family: var(--font-mono); font-size: 13px; color: var(--accent);">1</span>
+      <h3 style="font-size: 22px; font-weight: 600;">Input</h3>
+    </div>
+    <p style="font-size: 15px; line-height: 1.6; color: var(--text-muted); max-width: 680px; margin-bottom: 20px;">Paste or upload the source, watch live metrics, confirm the pack in effect, then run.</p>
+
+    <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 18px;">
+      <div style="font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px;">Wireframe</div>
+      <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+        <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.Button" variant="ghost" hint-size="120px,34px">Upload file</x-import>
+        <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.Button" variant="ghost" hint-size="120px,34px">Load example</x-import>
+      </div>
+      <div style="border: 1px solid var(--border-light); border-radius: 4px; background: var(--bg); padding: 14px; min-height: 120px; font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); line-height: 1.7;">Paste Markdown source, or drag a .md / .txt file here…<span style="display:block; height: 1px; margin: 10px 0; background: var(--border-light);"></span><span style="color: var(--text-muted);"># The observable universe<br>The results are very significant and quite unique in the field of…</span></div>
+      <div style="display: flex; gap: 18px; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-light);">
+        <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);">8,241 chars</span>
+        <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);">1,284 words</span>
+        <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);">58 sentences</span>
+        <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);">avg 22.1 words/sentence</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 16px;">
+        <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);">Pack <span style="color: var(--text-muted);">concise_scientific_writing</span> · v1.2 · 6 transformations</span>
+        <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.Button" variant="primary" hint-size="140px,34px">Run pipeline</x-import>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 2 — OBSERVE -->
+  <div style="margin-bottom: 56px;">
+    <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px;">
+      <span style="font-family: var(--font-mono); font-size: 13px; color: var(--accent);">2</span>
+      <h3 style="font-size: 22px; font-weight: 600;">Observe</h3>
+    </div>
+    <p style="font-size: 15px; line-height: 1.6; color: var(--text-muted); max-width: 680px; margin-bottom: 20px;">Read-only source with each observation's evidence highlighted and colored by safety. The sidebar lists observations grouped by rule; clicking a highlight or a list entry selects and scrolls to its counterpart.</p>
+
+    <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 18px;">
+      <div style="font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px;">Wireframe</div>
+      <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 12px;">
+        <!-- source with highlights -->
+        <div style="border: 1px solid var(--border-light); border-radius: 4px; background: var(--bg); padding: 14px; font-size: 14px; line-height: 1.9; color: var(--text-muted);">The results are <span style="background: var(--tint-project); color: var(--accent-orange); border-radius: 3px; padding: 1px 3px;">very significant</span> and quite <span style="background: var(--tint-study); color: var(--accent-teal); border-radius: 3px; padding: 1px 3px;">unique</span> in the field. <span style="border-bottom: 2px dashed var(--accent-purple); color: var(--text);">This long sentence, which spans many clauses and could reasonably be split for clarity, is flagged for review rather than rewritten automatically.</span> The data <span style="background: var(--tint-study); color: var(--accent-teal); border-radius: 3px; padding: 1px 3px;">clearly shows</span> a trend.</div>
+        <!-- sidebar -->
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim);">Rule · hedging</div>
+          <div style="border: 1px solid var(--border-light); border-radius: 4px; background: var(--bg); padding: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;"><span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);">obs-04</span><x-import component-from-global-scope="DHKDesignSystem_c5bcb5.Tag" kind="study" hint-size="60px,22px">SAFE</x-import></div>
+            <div style="font-size: 13px; color: var(--text); margin-top: 6px;">"unique"</div>
+            <div style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">Absolute claim without support.</div>
+          </div>
+          <div style="font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); margin-top: 6px;">Rule · long_sentence</div>
+          <div style="border: 1px solid var(--border-light); border-radius: 4px; background: var(--bg); padding: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;"><span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);">obs-07</span><x-import component-from-global-scope="DHKDesignSystem_c5bcb5.Tag" kind="tool" hint-size="70px,22px">REVIEW</x-import></div>
+            <div style="font-size: 13px; color: var(--text); margin-top: 6px;">41-word sentence</div>
+            <div style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">Exceeds threshold; human decision.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 3 — RECOMMEND -->
+  <div style="margin-bottom: 56px;">
+    <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px;">
+      <span style="font-family: var(--font-mono); font-size: 13px; color: var(--accent);">3</span>
+      <h3 style="font-size: 22px; font-weight: 600;">Recommend</h3>
+    </div>
+    <p style="font-size: 15px; line-height: 1.6; color: var(--text-muted); max-width: 680px; margin-bottom: 20px;">A table of recommendations. Each row links back to its observation (jumps to step 2 with that observation selected). <span style="font-family: var(--font-mono); font-size: 13px;">review_long_sentence</span> rows are visually distinct — they propose no text change.</p>
+
+    <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 18px;">
+      <div style="font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px;">Wireframe</div>
+      <div style="border: 1px solid var(--border-light); border-radius: 4px; background: var(--bg); overflow: hidden;">
+        <div style="display: grid; grid-template-columns: 0.8fr 1fr 1.8fr 0.8fr; gap: 0; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); background: var(--bg2); border-bottom: 1px solid var(--border);">
+          <span style="padding: 10px 12px;">Rec / Obs</span><span style="padding: 10px 12px;">Action</span><span style="padding: 10px 12px;">Before → After</span><span style="padding: 10px 12px;">Safety</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 0.8fr 1fr 1.8fr 0.8fr; gap: 0; font-size: 13px; border-bottom: 1px solid var(--border-light); align-items: center;">
+          <span style="padding: 10px 12px; font-family: var(--font-mono); font-size: 11px;"><span style="color: var(--text);">rec-04</span> <span style="color: var(--accent);">↩ obs-04</span></span><span style="padding: 10px 12px; color: var(--text-muted);">soften_claim</span><span style="padding: 10px 12px; color: var(--text-muted);"><span style="text-decoration: line-through; color: var(--text-dim);">unique</span> → notable</span><span style="padding: 10px 12px;"><x-import component-from-global-scope="DHKDesignSystem_c5bcb5.Tag" kind="study" hint-size="60px,22px">SAFE</x-import></span>
+        </div>
+        <div style="display: grid; grid-template-columns: 0.8fr 1fr 1.8fr 0.8fr; gap: 0; font-size: 13px; border-bottom: 1px solid var(--border-light); align-items: center;">
+          <span style="padding: 10px 12px; font-family: var(--font-mono); font-size: 11px;"><span style="color: var(--text);">rec-05</span> <span style="color: var(--accent);">↩ obs-05</span></span><span style="padding: 10px 12px; color: var(--text-muted);">cut_intensifier</span><span style="padding: 10px 12px; color: var(--text-muted);"><span style="text-decoration: line-through; color: var(--text-dim);">very significant</span> → significant</span><span style="padding: 10px 12px;"><x-import component-from-global-scope="DHKDesignSystem_c5bcb5.Tag" kind="project" hint-size="80px,22px">LOW RISK</x-import></span>
+        </div>
+        <div style="display: grid; grid-template-columns: 0.8fr 1fr 1.8fr 0.8fr; gap: 0; font-size: 13px; align-items: center; background: rgba(139,42,220,0.04);">
+          <span style="padding: 10px 12px; font-family: var(--font-mono); font-size: 11px;"><span style="color: var(--text);">rec-07</span> <span style="color: var(--accent);">↩ obs-07</span></span><span style="padding: 10px 12px; color: var(--text-muted); font-style: italic;">review_long_sentence</span><span style="padding: 10px 12px; color: var(--text-dim); font-style: italic;">no text change proposed</span><span style="padding: 10px 12px;"><x-import component-from-global-scope="DHKDesignSystem_c5bcb5.Tag" kind="tool" hint-size="70px,22px">REVIEW</x-import></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 4 — TRANSFORM -->
+  <div style="margin-bottom: 56px;">
+    <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px;">
+      <span style="font-family: var(--font-mono); font-size: 13px; color: var(--accent);">4</span>
+      <h3 style="font-size: 22px; font-weight: 600;">Transform</h3>
+    </div>
+    <p style="font-size: 15px; line-height: 1.6; color: var(--text-muted); max-width: 680px; margin-bottom: 20px;">Two tabs. <strong style="color: var(--text);">Diff</strong> — original vs. transformed, word-level inline diff, applied changes colored by safety. <strong style="color: var(--text);">Log</strong> — the transformation records; not-applied (<span style="font-family: var(--font-mono); font-size: 13px;">review</span>) entries shown separately as "flagged for human review."</p>
+
+    <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 18px;">
+      <div style="display: flex; gap: 4px; margin-bottom: 14px;">
+        <span style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; padding: 7px 14px; border-radius: 4px 4px 0 0; background: var(--bg); border: 1px solid var(--border); border-bottom-color: var(--bg); color: var(--accent);">Diff</span>
+        <span style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; padding: 7px 14px; color: var(--text-dim);">Log</span>
+      </div>
+      <div style="border: 1px solid var(--border-light); border-radius: 4px; background: var(--bg); padding: 14px; font-size: 14px; line-height: 1.9; color: var(--text-muted);">The results are <span style="background: var(--tint-project); color: var(--accent-orange); border-radius: 3px; padding: 1px 3px; text-decoration: line-through;">very</span> <span style="background: var(--tint-study); color: var(--accent-teal); border-radius: 3px; padding: 1px 3px;">significant</span> and quite <span style="background: var(--tint-study); color: var(--accent-teal); border-radius: 3px; padding: 1px 3px;">notable</span> in the field. <span style="border-bottom: 2px dashed var(--accent-purple); color: var(--text-dim);">[long sentence — left unchanged, flagged for review]</span> The data <span style="background: var(--tint-study); color: var(--accent-teal); border-radius: 3px; padding: 1px 3px;">shows</span> a trend.</div>
+      <div style="display: flex; gap: 18px; margin-top: 14px; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);">
+        <span><span style="color: var(--accent-teal);">■</span> 9 applied</span>
+        <span><span style="color: var(--accent-purple);">■</span> 3 flagged for review</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 5 — VALIDATE -->
+  <div style="margin-bottom: 56px;">
+    <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px;">
+      <span style="font-family: var(--font-mono); font-size: 13px; color: var(--accent);">5</span>
+      <h3 style="font-size: 22px; font-weight: 600;">Validate</h3>
+    </div>
+    <p style="font-size: 15px; line-height: 1.6; color: var(--text-muted); max-width: 680px; margin-bottom: 20px;">Overall status, the protected-token check with its token list (URLs, numbers, citations, bracketed references), any missing tokens in red, and the standing caveat.</p>
+
+    <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 18px;">
+      <div style="font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px;">Wireframe</div>
+      <div style="display: flex; align-items: center; gap: 12px; border: 1px solid var(--border-light); border-radius: 4px; background: var(--bg); padding: 14px;">
+        <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--accent-teal);"></span>
+        <span style="font-family: var(--font-mono); font-size: 14px; letter-spacing: 0.04em; color: var(--text);">VALIDATION PASS</span>
+        <span style="font-size: 13px; color: var(--text-dim);">— all protected tokens preserved</span>
+      </div>
+      <div style="border: 1px solid var(--border-light); border-radius: 4px; background: var(--bg); padding: 14px; margin-top: 10px;">
+        <div style="font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px;">Protected tokens · 14 checked · 0 missing</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          <span style="font-family: var(--font-mono); font-size: 11px; padding: 3px 8px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border-light); color: var(--text-muted);">10.1038/s41586</span>
+          <span style="font-family: var(--font-mono); font-size: 11px; padding: 3px 8px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border-light); color: var(--text-muted);">https://arxiv.org/…</span>
+          <span style="font-family: var(--font-mono); font-size: 11px; padding: 3px 8px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border-light); color: var(--text-muted);">[3]</span>
+          <span style="font-family: var(--font-mono); font-size: 11px; padding: 3px 8px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border-light); color: var(--text-muted);">42.7%</span>
+          <span style="font-family: var(--font-mono); font-size: 11px; padding: 3px 8px; border-radius: 4px; background: var(--bg2); border: 1px solid var(--border-light); color: var(--text-muted);">Fig. 2</span>
+        </div>
+      </div>
+      <p style="font-size: 13px; line-height: 1.6; color: var(--text-dim); margin-top: 12px; font-style: italic;">Caveat: validation is conservative and evidence-based. It does not prove semantic equivalence.</p>
+    </div>
+  </div>
+
+  <!-- PANEL 6 — REPORT -->
+  <div style="margin-bottom: 12px;">
+    <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px;">
+      <span style="font-family: var(--font-mono); font-size: 13px; color: var(--accent);">6</span>
+      <h3 style="font-size: 22px; font-weight: 600;">Report</h3>
+    </div>
+    <p style="font-size: 15px; line-height: 1.6; color: var(--text-muted); max-width: 680px; margin-bottom: 20px;">Rendered <span style="font-family: var(--font-mono); font-size: 13px;">report.md</span> — metrics before/after, validation summary, transformation log, final document.</p>
+
+    <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 18px;">
+      <div style="border: 1px solid var(--border-light); border-radius: 4px; background: var(--bg); padding: 16px;">
+        <div style="display: flex; gap: 24px; flex-wrap: wrap; padding-bottom: 14px; border-bottom: 1px solid var(--border-light);">
+          <div><div style="font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim);">Avg sentence</div><div style="font-size: 15px; color: var(--text); margin-top: 4px;">22.1 → <span style="color: var(--accent-teal);">18.4</span></div></div>
+          <div><div style="font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim);">Intensifiers</div><div style="font-size: 15px; color: var(--text); margin-top: 4px;">14 → <span style="color: var(--accent-teal);">5</span></div></div>
+          <div><div style="font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim);">Validation</div><div style="font-size: 15px; color: var(--accent-teal); margin-top: 4px;">pass</div></div>
+        </div>
+        <div style="font-size: 14px; line-height: 1.8; color: var(--text-muted); margin-top: 14px;">The results are significant and quite notable in the field. This long sentence…</div>
+      </div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px;">
+        <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.Button" variant="ghost" hint-size="150px,34px">Copy final document</x-import>
+        <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.Button" variant="ghost" hint-size="140px,34px">Download final.md</x-import>
+        <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.Button" variant="primary" hint-size="180px,34px">Download artifact trail</x-import>
+      </div>
+      <p style="font-size: 12px; color: var(--text-dim); margin-top: 10px; font-family: var(--font-mono);">zip of six files — byte-identical to a CLI run's output directory.</p>
+    </div>
+  </div>
+
+  <!-- ── 04 SAFETY COLOR CODE ────────────────────────── -->
+  <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.SectionDivider" hint-size="100%,80px">04 — Safety color code</x-import>
+
+  <p style="font-size: 16px; line-height: 1.75; color: var(--text-muted); max-width: 680px; margin-bottom: 8px;">Used consistently across highlights, badges, and diffs. Colors must meet WCAG AA contrast and are always paired with the text label — never color alone.</p>
+  <p style="font-size: 13px; line-height: 1.6; color: var(--text-dim); max-width: 680px; margin-bottom: 24px; font-style: italic;">Note: the RFC's green / amber / purple maps onto DHK's semantic accents — teal for <em>safe</em>, orange for <em>low-risk</em>, purple for <em>review</em> — since the Electric Cobalt palette carries no green or amber.</p>
+
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+    <div style="border: 1px solid var(--border); border-radius: 4px; overflow: hidden;">
+      <div style="height: 6px; background: var(--accent-teal);"></div>
+      <div style="padding: 16px;">
+        <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.Tag" kind="study" hint-size="60px,22px">SAFE</x-import>
+        <div style="font-size: 14px; color: var(--text); margin-top: 12px; font-weight: 500;">Applied automatically</div>
+        <div style="font-size: 13px; color: var(--text-dim); margin-top: 4px;">High-confidence, reversible change.</div>
+      </div>
+    </div>
+    <div style="border: 1px solid var(--border); border-radius: 4px; overflow: hidden;">
+      <div style="height: 6px; background: var(--accent-orange);"></div>
+      <div style="padding: 16px;">
+        <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.Tag" kind="project" hint-size="80px,22px">LOW RISK</x-import>
+        <div style="font-size: 14px; color: var(--text); margin-top: 12px; font-weight: 500;">Applied automatically</div>
+        <div style="font-size: 13px; color: var(--text-dim); margin-top: 4px;">Applied, but worth a glance.</div>
+      </div>
+    </div>
+    <div style="border: 1px solid var(--border); border-radius: 4px; overflow: hidden;">
+      <div style="height: 6px; background: var(--accent-purple);"></div>
+      <div style="padding: 16px;">
+        <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.Tag" kind="tool" hint-size="70px,22px">REVIEW</x-import>
+        <div style="font-size: 14px; color: var(--text); margin-top: 12px; font-weight: 500;">Flagged only, never applied</div>
+        <div style="font-size: 13px; color: var(--text-dim); margin-top: 4px;">Dashed underline; human decides.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 05 ARCHITECTURE ─────────────────────────────── -->
+  <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.SectionDivider" hint-size="100%,80px">05 — Architecture</x-import>
+
+  <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 12px;">Run the Python harness in the browser</h3>
+  <p style="font-size: 16px; line-height: 1.75; color: var(--text-muted); max-width: 680px;">The <span style="font-family: var(--font-mono); font-size: 14px;">praxis</span> package is stdlib-only and small. Run it unchanged in the browser via Pyodide (CPython compiled to WebAssembly) so the UI stays evidence of what the harness actually does.</p>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px;">
+    <div style="border: 1px solid var(--border); border-radius: 4px; padding: 18px; background: var(--bg2);">
+      <div style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px;">Why not a TS port?</div>
+      <p style="font-size: 14px; line-height: 1.65; color: var(--text-muted);">A port is a second implementation of the rules. The two drift, and the UI stops being evidence. One source of truth outweighs load time.</p>
+    </div>
+    <div style="border: 1px solid var(--border); border-radius: 4px; padding: 18px; background: var(--bg2);">
+      <div style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px;">Why not serverless?</div>
+      <p style="font-size: 14px; line-height: 1.65; color: var(--text-muted);">It rules out GitHub Pages, adds a network hop and a privacy question, and still packages the same Python. Client-side keeps both targets open.</p>
+    </div>
+  </div>
+
+  <div style="border-left: 3px solid var(--accent); background: var(--bg2); border-radius: 0 4px 4px 0; padding: 14px 18px; margin-top: 16px;">
+    <p style="font-size: 14px; line-height: 1.65; color: var(--text-muted);"><strong style="color: var(--text);">Cost:</strong> a one-time ~7 MB Pyodide download. Mitigations — load in the background while the user types, cache via service worker, show "loading engine" status until ready. The engine boundary below keeps it swappable.</p>
+  </div>
+
+  <h3 style="font-size: 20px; font-weight: 600; margin: 40px 0 14px;">Engine boundary</h3>
+  <p style="font-size: 15px; line-height: 1.7; color: var(--text-muted); max-width: 680px; margin-bottom: 16px;">The UI calls a single function and receives the full artifact trail. TypeScript types mirror the dataclasses in <span style="font-family: var(--font-mono); font-size: 13px;">praxis/models.py</span> exactly. Only this module knows Python exists.</p>
+
+  <pre style="background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 18px; overflow-x: auto; font-family: var(--font-mono); font-size: 13px; line-height: 1.7; color: var(--text-muted);"><span style="color: var(--accent-purple);">interface</span> <span style="color: var(--text);">PraxisResult</span> {
+  observations:    Observation[];      <span style="color: var(--text-dim);">// observations.json</span>
+  recommendations: Recommendation[];   <span style="color: var(--text-dim);">// recommendations.json</span>
+  transformations: Transformation[];   <span style="color: var(--text-dim);">// transformations.json</span>
+  validation:      Validation;         <span style="color: var(--text-dim);">// validation.json</span>
+  final:           string;             <span style="color: var(--text-dim);">// final.md</span>
+  report:          string;             <span style="color: var(--text-dim);">// report.md</span>
+  metrics: { before: Metrics; after: Metrics };
+}
+
+<span style="color: var(--accent);">runPipeline</span>(source: string): Promise&lt;PraxisResult&gt;</pre>
+
+  <div style="border-left: 3px solid var(--accent-orange); background: var(--bg2); border-radius: 0 4px 4px 0; padding: 14px 18px; margin-top: 16px;">
+    <p style="font-size: 14px; line-height: 1.65; color: var(--text-muted);"><strong style="color: var(--text);">Harness prerequisite —</strong> the only change to the existing package: extract the pipeline core from <span style="font-family: var(--font-mono); font-size: 13px;">cli.run</span> into <span style="font-family: var(--font-mono); font-size: 13px;">praxis.pipeline.run_pipeline(text: str) → dict</span> that returns the artifacts instead of writing files. The CLI and the UI shim both call it.</p>
+  </div>
+
+  <!-- ── 06 ACCEPTANCE CHECKS ────────────────────────── -->
+  <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.SectionDivider" hint-size="100%,80px">06 — Acceptance checks</x-import>
+
+  <div style="display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--border); border-radius: 4px; overflow: hidden;">
+    <div style="display: flex; gap: 16px; padding: 16px 18px; background: var(--bg2); border-bottom: 1px solid var(--border-light);"><span style="font-family: var(--font-mono); font-size: 12px; color: var(--accent);">01</span><span style="font-size: 14px; line-height: 1.6; color: var(--text-muted);">Pasting the golden example and running produces artifacts byte-identical (JSON/Markdown content) to <span style="font-family: var(--font-mono); font-size: 13px;">python -m praxis run</span> on the same input.</span></div>
+    <div style="display: flex; gap: 16px; padding: 16px 18px; background: var(--bg2); border-bottom: 1px solid var(--border-light);"><span style="font-family: var(--font-mono); font-size: 12px; color: var(--accent);">02</span><span style="font-size: 14px; line-height: 1.6; color: var(--text-muted);">Every transformation in step 4 links to a recommendation in step 3 and an observation in step 2.</span></div>
+    <div style="display: flex; gap: 16px; padding: 16px 18px; background: var(--bg2); border-bottom: 1px solid var(--border-light);"><span style="font-family: var(--font-mono); font-size: 12px; color: var(--accent);">03</span><span style="font-size: 14px; line-height: 1.6; color: var(--text-muted);">A document with no matches runs cleanly: empty observation list, no diff, validation pass.</span></div>
+    <div style="display: flex; gap: 16px; padding: 16px 18px; background: var(--bg2); border-bottom: 1px solid var(--border-light);"><span style="font-family: var(--font-mono); font-size: 12px; color: var(--accent);">04</span><span style="font-size: 14px; line-height: 1.6; color: var(--text-muted);">A 50 kB document runs without freezing the UI — the pipeline executes in a web worker.</span></div>
+    <div style="display: flex; gap: 16px; padding: 16px 18px; background: var(--bg2);"><span style="font-family: var(--font-mono); font-size: 12px; color: var(--accent);">05</span><span style="font-size: 14px; line-height: 1.6; color: var(--text-muted);">The site works offline after first load, via service worker.</span></div>
+  </div>
+
+  <!-- ── 07 OUT OF SCOPE ─────────────────────────────── -->
+  <x-import component-from-global-scope="DHKDesignSystem_c5bcb5.SectionDivider" hint-size="100%,80px">07 — Future · out of scope for v1</x-import>
+
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+    <div style="border: 1px dashed var(--border); border-radius: 4px; padding: 18px;">
+      <div style="font-size: 15px; color: var(--text); font-weight: 500;">Accept / reject</div>
+      <p style="font-size: 13px; line-height: 1.6; color: var(--text-dim); margin-top: 6px;">Approving individual recommendations before transform — turns the viewer into a review tool.</p>
+    </div>
+    <div style="border: 1px dashed var(--border); border-radius: 4px; padding: 18px;">
+      <div style="font-size: 15px; color: var(--text); font-weight: 500;">Pack authoring</div>
+      <p style="font-size: 13px; line-height: 1.6; color: var(--text-dim); margin-top: 6px;">Pack selection and editing. v1 is view-only, single pack.</p>
+    </div>
+    <div style="border: 1px dashed var(--border); border-radius: 4px; padding: 18px;">
+      <div style="font-size: 15px; color: var(--text); font-weight: 500;">Run permalinks</div>
+      <p style="font-size: 13px; line-height: 1.6; color: var(--text-dim); margin-top: 6px;">Shareable links — needs URL-encoded documents or storage; revisit privacy first.</p>
+    </div>
+  </div>
+
+  <!-- ── FOOTER ──────────────────────────────────────── -->
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--border);">
+    <span style="font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; color: var(--text-dim);">Praxis · RFC-0002 · UX Spec v0.1</span>
+    <span style="font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; color: var(--text-dim);">Deterministic · auditable · no backend</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
