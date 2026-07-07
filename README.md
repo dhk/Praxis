@@ -28,6 +28,15 @@ Each run creates an artifact directory containing machine-readable JSON and huma
 python -m praxis run examples/concise_scientific_writing/input.md --out artifacts/demo
 ```
 
+## Web viewer
+
+A static, browser-only viewer for the artifact trail lives in [`web/`](web/):
+the same Python package runs unchanged in the browser via Pyodide, and the UI
+lets you step through each pass and its artifacts. See
+[`web/README.md`](web/README.md) to build it locally or deploy it to GitHub
+Pages or Vercel; the UX spec is in
+[`docs/design/praxis-viewer/`](docs/design/praxis-viewer/).
+
 Then inspect:
 
 ```text
