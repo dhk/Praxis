@@ -24,6 +24,7 @@ const EXAMPLES = [
   { id: 'hotaling-2020', label: 'Concise writing — after Hotaling (2020)', pack: DEFAULT_PACK },
   { id: 'drift-study', label: 'Model drift study', pack: DEFAULT_PACK },
   { id: 'claude-skill', label: 'Claude skill (SKILL.md)', pack: 'claude_skill_authoring' },
+  { id: 'resume', label: 'Resume', pack: 'resume_writing' },
 ];
 
 const SAFETY_LABEL = { safe: 'SAFE', low_risk: 'LOW RISK', review: 'REVIEW' };

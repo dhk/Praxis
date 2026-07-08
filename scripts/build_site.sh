@@ -23,6 +23,7 @@ cp examples/concise_scientific_writing/input.md dist/examples/technical-note.md
 cp examples/hotaling_2020/input.md dist/examples/hotaling-2020.md
 cp examples/drift_study/input.md dist/examples/drift-study.md
 cp examples/claude_skill/SKILL.md dist/examples/claude-skill.md
+cp examples/resume/input.md dist/examples/resume.md
 
 files=$(cd praxis && ls *.py | sed 's/^/"/;s/$/"/' | paste -sd, -)
 printf '{"files":[%s]}\n' "$files" > dist/py/manifest.json

@@ -90,7 +90,39 @@ CLAUDE_SKILL_AUTHORING = Pack(
     ),
 )
 
-PACKS = {p.id: p for p in (CONCISE_SCIENTIFIC_WRITING, CLAUDE_SKILL_AUTHORING)}
+# Same design as the skills pack: mechanical fixes are applied, judgment
+# calls are flagged. Dates, employers, and metrics are protected tokens, so
+# validation proves the rewrite never touched a fact.
+RESUME_WRITING = Pack(
+    id="resume_writing",
+    version="0.1.0",
+    title="Resume Writing",
+    phrase_rules=(
+        PhraseRule("RES-001", "Lead with action verbs", r"\bResponsible for managing\b", "Managed", "Action verbs claim the achievement directly; 'responsible for' only claims the assignment.", "low_risk"),
+        PhraseRule("RES-001", "Lead with action verbs", r"\bResponsible for leading\b", "Led", "Action verbs claim the achievement directly; 'responsible for' only claims the assignment.", "low_risk"),
+        PhraseRule("RES-001", "Lead with action verbs", r"\bResponsible for developing\b", "Developed", "Action verbs claim the achievement directly; 'responsible for' only claims the assignment.", "low_risk"),
+        PhraseRule("RES-002", "Remove empty intensifiers", r"\bsuccessfully\s+", "", "If the result is stated, 'successfully' adds nothing; if it isn't, the intensifier can't replace it.", "safe"),
+        PhraseRule("RES-002", "Remove empty intensifiers", r"\beffectively\s+", "", "If the result is stated, 'effectively' adds nothing; if it isn't, the intensifier can't replace it.", "safe"),
+        PhraseRule("RES-003", "Prefer plain verbs", r"\butilized\b", "used", "Plain verbs read faster in a six-second scan.", "low_risk"),
+        PhraseRule("RES-003", "Prefer plain verbs", r"\bleveraged\b", "used", "Plain verbs read faster in a six-second scan.", "low_risk"),
+    ),
+    flag_rules=(
+        FlagRule("RES-004", "Avoid first-person pronouns",
+                 "Resume convention omits 'I/my/me'; recruiters read the implied subject and pronouns spend space without adding facts.",
+                 action="review_first_person",
+                 pattern=r"\b(?:I|my|me)\b"),
+        FlagRule("RES-005", "Quantify the achievement",
+                 "A bullet with no number, percentage, or amount claims activity, not impact. Add scale, delta, or frequency — or justify why none exists.",
+                 action="review_unquantified_bullet",
+                 pattern=r"^[ \t]*[-*][ \t](?![^\n]*[\d%$])[^\n]+$"),
+        FlagRule("RES-006", "Show, don't self-describe",
+                 "Trait claims ('team player', 'detail-oriented') are unverifiable; replace with an achievement that demonstrates the trait.",
+                 action="review_trait_claim",
+                 pattern=r"\b(?:team player|hard[- ]working|detail[- ]oriented|results[- ]driven|self[- ]starter|go[- ]getter)\b"),
+    ),
+)
+
+PACKS = {p.id: p for p in (CONCISE_SCIENTIFIC_WRITING, CLAUDE_SKILL_AUTHORING, RESUME_WRITING)}
 DEFAULT_PACK_ID = CONCISE_SCIENTIFIC_WRITING.id
 
 def get_pack(pack_id: str) -> Pack:
