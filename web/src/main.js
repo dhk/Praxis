@@ -14,6 +14,7 @@ const state = {
   step: 1,
   selectedObs: null,
   transformTab: 'diff',
+  reportTab: null,
   running: false,
   error: null,
   packId: DEFAULT_PACK,
@@ -472,9 +473,40 @@ function download(name, blob) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
+// The exact, fixed section titles report.py emits at the top level. Only
+// these split into tabs — the "Final Document" section embeds the user's
+// document verbatim, which may contain its own H2 headings (e.g. "##
+// Experience" in a resume), and those must stay inside that one tab rather
+// than being mistaken for new top-level sections.
+const REPORT_SECTIONS = ['Metrics', 'Validation', 'Transformation Diff Log', 'Final Document'];
+
+function splitReportSections(reportMd) {
+  const lines = reportMd.split('\n');
+  const sections = [];
+  let current = null;
+  for (const line of lines) {
+    const h2 = /^##\s+(.*)$/.exec(line);
+    if (h2 && REPORT_SECTIONS.includes(h2[1].trim())) {
+      current = { title: h2[1].trim(), lines: [] };
+      sections.push(current);
+    } else if (current) {
+      current.lines.push(line);
+    }
+    // Lines before the first known section (the H1 title) are dropped —
+    // it's already shown in the pass head.
+  }
+  return sections.map((s) => ({ title: s.title, body: s.lines.join('\n').trim() }));
+}
+
 function renderReport() {
   const t = state.trail;
   const hasPrompt = Boolean(t.ui.prompt);
+  const sections = splitReportSections(t.report);
+  if (!sections.some((s) => s.title === state.reportTab)) {
+    state.reportTab = sections[0]?.title;
+  }
+  const active = sections.find((s) => s.title === state.reportTab) || sections[0];
+
   panelEl.innerHTML = `
     ${passHead(6, 'Report', 'The rendered report: metrics before and after, the validation summary, the transformation log, and the final document.')}
     <div class="report-actions">
@@ -484,7 +516,14 @@ function renderReport() {
       <button class="btn primary" id="dl-trail">Download artifact trail</button>
     </div>
     ${hasPrompt ? '<p class="prompt-hint">The review prompt packages every flagged item — evidence, reasons, protected tokens, and the document — as Markdown for an LLM (or a colleague) to propose resolutions. The pipeline itself never calls one.</p>' : ''}
-    <div class="card"><div class="report-body">${renderMarkdown(t.report)}</div></div>`;
+    <div class="tabs" role="tablist">
+      ${sections.map((s) => `<button class="tab" role="tab" data-report-tab="${escapeHtml(s.title)}" aria-selected="${s.title === active.title}">${escapeHtml(s.title)}</button>`).join('')}
+    </div>
+    <div class="card"><div class="report-body">${renderMarkdown(active ? active.body : t.report)}</div></div>`;
+
+  panelEl.querySelectorAll('[data-report-tab]').forEach((el) => {
+    el.addEventListener('click', () => { state.reportTab = el.dataset.reportTab; render(); });
+  });
 
   if (hasPrompt) {
     document.getElementById('copy-prompt').addEventListener('click', async (e) => {
