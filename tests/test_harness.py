@@ -113,6 +113,22 @@ def test_validation_protects_percent_sign():
     assert result["status"] == "fail"
     assert "23%" in result["checks"]["missing_protected_tokens"]
 
+def test_recommend_raises_clear_error_for_unmatched_observation():
+    # If an observation's rule_id doesn't fullmatch any phrase rule's pattern
+    # against its own evidence (e.g. a future pack with ambiguous same-id
+    # patterns, or a bug upstream in observe()), recommend() must fail loudly
+    # with a clear message rather than an opaque StopIteration.
+    from praxis.rules import recommend
+    from praxis.packs import get_pack
+    from praxis.models import Observation
+    import pytest
+
+    pack = get_pack("concise_scientific_writing")
+    bogus_obs = Observation(id="O-999", rule_id="CSW-001", rule_title="Remove unnecessary introductory phrases",
+                             location="char:0-3", evidence="xyz", reason="test", safety="safe")
+    with pytest.raises(ValueError, match="No phrase rule"):
+        recommend(pack, [bogus_obs])
+
 def test_report_escapes_pipes_and_newlines_in_table_cells():
     text = ("It should be noted that the pipeline handles a | b | c cases well and this "
             "sentence must be long enough to exceed the thirty five word threshold used "
