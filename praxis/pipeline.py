@@ -1,5 +1,5 @@
 from .rules import observe, recommend, transform
-from .validation import validate
+from .validation import validate, apply_validation_status
 from .metrics import metrics
 from .report import render_report
 from .models import to_dicts
@@ -17,7 +17,8 @@ def run_pipeline(text: str, pack_id: str = DEFAULT_PACK_ID) -> dict:
     observations = observe(pack, text)
     recommendations = recommend(pack, observations)
     final, transformations = transform(pack, text, observations, recommendations)
-    validation = validate(text, final, transformations)
+    validation = validate(text, final)
+    apply_validation_status(transformations, validation["status"])
 
     before_metrics = metrics(text)
     after_metrics = metrics(final)
