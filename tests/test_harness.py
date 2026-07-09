@@ -109,9 +109,24 @@ def test_validation_protects_percent_sign():
     original = "Revenue grew 23% year over year."
     stripped = "Revenue grew 23 year over year."  # simulates a rule eating the '%'
     assert "23%" in protected_tokens(original)
-    result = validate(original, stripped, [])
+    result = validate(original, stripped)
     assert result["status"] == "fail"
     assert "23%" in result["checks"]["missing_protected_tokens"]
+
+def test_validate_does_not_mutate_transformations():
+    # validate() used to mutate Transformation.validation_status in place as
+    # a side effect of a function that looked report-only. It's now pure;
+    # apply_validation_status() is the explicit, separately-named step that
+    # does the mutation.
+    from praxis.validation import validate, apply_validation_status
+    from praxis.models import Transformation
+
+    t = Transformation(id="T-001", recommendation_id="R-001", rule_id="X",
+                        location="char:0-1", before="a", after="b", reason="r", safety="safe", applied=True)
+    result = validate("a document with 42", "a document with 42")
+    assert t.validation_status == "pending"  # untouched by validate()
+    apply_validation_status([t], result["status"])
+    assert t.validation_status == "pass"
 
 def test_recommend_raises_clear_error_for_unmatched_observation():
     # If an observation's rule_id doesn't fullmatch any phrase rule's pattern
@@ -147,3 +162,65 @@ def test_report_escapes_pipes_and_newlines_in_table_cells():
     flagged_row = next(row for row in data_rows if row.startswith("| T-002"))
     assert "\\|" in flagged_row  # the raw ' | ' from the evidence was escaped, not split on
     assert "\n" not in "".join(data_rows)
+
+def _parse_pack_yaml(path: Path) -> dict:
+    """Minimal parser for this project's pack.yaml shape only: flat
+    top-level scalar keys plus one list of flat dicts under
+    `transformations:`. Not a general YAML parser — deliberately just
+    enough to check packs/*/pack.yaml against packs.py without adding a
+    YAML dependency (the project is stdlib-only; see CLAUDE.md).
+    """
+    top: dict = {}
+    transformations: list[dict] = []
+    current: dict | None = None
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        stripped = raw.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if stripped.startswith("- "):
+            if current is not None:
+                transformations.append(current)
+            current = {}
+            key, _, value = stripped[2:].partition(":")
+            current[key.strip()] = value.strip()
+        elif raw.startswith(" ") and current is not None:
+            key, _, value = stripped.partition(":")
+            current[key.strip()] = value.strip()
+        else:
+            key, _, value = stripped.partition(":")
+            key = key.strip()
+            if key != "transformations":
+                top[key] = value.strip()
+    if current is not None:
+        transformations.append(current)
+    top["transformations"] = transformations
+    return top
+
+def test_pack_yaml_stays_in_sync_with_packs_py():
+    # packs/<id>/pack.yaml is a hand-maintained metadata mirror (CLAUDE.md:
+    # "not read by the code — keep it in sync by hand") with nothing to
+    # catch drift. Parse it (test-only; the package itself still never
+    # touches YAML) and cross-check against the registry.
+    from praxis.packs import PACKS
+
+    for pack in PACKS.values():
+        yaml_path = Path(f"packs/{pack.id}/pack.yaml")
+        assert yaml_path.exists(), f"missing packs/{pack.id}/pack.yaml"
+        parsed = _parse_pack_yaml(yaml_path)
+        assert parsed["id"] == pack.id
+        assert parsed["version"] == pack.version
+        assert parsed["title"] == pack.title
+
+        expected = []
+        seen_ids = set()
+        for rule in pack.phrase_rules:
+            if rule.id not in seen_ids:
+                seen_ids.add(rule.id)
+                expected.append({"id": rule.id, "title": rule.title, "safety": rule.safety})
+        for rule in pack.flag_rules:
+            if rule.id not in seen_ids:
+                seen_ids.add(rule.id)
+                expected.append({"id": rule.id, "title": rule.title, "safety": "review"})
+
+        actual = [{"id": t["id"], "title": t["title"], "safety": t["safety"]} for t in parsed["transformations"]]
+        assert actual == expected, f"packs/{pack.id}/pack.yaml is out of sync with packs.py"
