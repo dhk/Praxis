@@ -24,12 +24,36 @@ function isTableSeparator(line) {
   return /^\s*\|(\s*:?-+:?\s*\|)+\s*$/.test(line);
 }
 
+// Split on '|' that isn't backslash-escaped (report.py escapes literal '|'
+// in cell content as '\|' so it can't be mistaken for a column delimiter).
+// A regex negative lookbehind (`/(?<!\\)\|/`) would say this in one line, but
+// lookbehind only landed in Safari 16.4 (Mar 2023) — on anything older it's a
+// parse-time SyntaxError that fails the whole module, not just this
+// function. Scan by hand instead so this works on any JS engine.
+function splitUnescapedPipes(s) {
+  const parts = [];
+  let cur = '';
+  for (let i = 0; i < s.length; i += 1) {
+    const ch = s[i];
+    if (ch === '\\' && (s[i + 1] === '|' || s[i + 1] === '\\')) {
+      cur += ch + s[i + 1];
+      i += 1; // consumed as one escaped unit; don't treat s[i+1] as a delimiter
+      continue;
+    }
+    if (ch === '|') {
+      parts.push(cur);
+      cur = '';
+      continue;
+    }
+    cur += ch;
+  }
+  parts.push(cur);
+  return parts;
+}
+
 function cells(line) {
-  // Split on '|' that isn't backslash-escaped (report.py escapes literal '|'
-  // in cell content as '\|' so it can't be mistaken for a column delimiter),
-  // then unescape '\|' and '\\' within each cell.
   const trimmed = line.trim().replace(/^\||\|$/g, '');
-  return trimmed.split(/(?<!\\)\|/).map((c) => c.trim().replace(/\\\|/g, '|').replace(/\\\\/g, '\\'));
+  return splitUnescapedPipes(trimmed).map((c) => c.trim().replace(/\\\|/g, '|').replace(/\\\\/g, '\\'));
 }
 
 export function renderMarkdown(md) {
